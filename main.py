@@ -24,7 +24,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
-hf_client = Client("royalpig7/royalpig-free-bot", token=HF_TOKEN)
+hf_client = Client("royalpig7/royalpig-free-bot", hf_token=HF_TOKEN)
 
 chat_histories = {}
 
