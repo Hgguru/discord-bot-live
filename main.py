@@ -6,7 +6,7 @@ from gradio_client import Client
 from flask import Flask
 from threading import Thread
 
-# 🌟 1. Create a tiny web server to satisfy Render's Free Web Service requirements
+# 1. Initialize Flask Web Server
 app = Flask('')
 
 @app.route('/')
@@ -14,14 +14,10 @@ def home():
     return "Bot is alive and healthy!"
 
 def run_web_server():
-    # Render provides a specific PORT environment variable we must bind to
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-# Start the web server on a background loop thread
-Thread(target=run_web_server).start()
-
-# 🌟 2. Your original Discord Bot setup continues exactly the same below...
+# 2. Setup Discord Bot Configs
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -76,4 +72,12 @@ async def on_message(message):
             if len(chat_histories[channel_id]) > 10:
                 chat_histories[channel_id] = chat_histories[channel_id][-10:]
 
+# 3. CONCURRENT LAUNCH TRACK
+# Start the web server in a separate background thread first
+server_thread = Thread(target=run_web_server)
+server_thread.daemon = True  # Allows the thread to exit cleanly when the main script stops
+server_thread.start()
+
+# Now run the Discord connection loop on the main script thread
+print("🚀 Launching Discord client engine...")
 bot.run(DISCORD_TOKEN)
