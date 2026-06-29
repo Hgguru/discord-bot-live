@@ -18,13 +18,26 @@ def run_web_server():
     app.run(host='0.0.0.0', port=port)
 
 # 2. Setup Discord Bot Configs
+# Setup Discord Bot Configs
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
-hf_client = Client("royalpig7/royalpig-free-bot", hf_token=HF_TOKEN)
+
+# 🌟 Wrapped in a memory-safe try block with verbose logs turned off
+try:
+    print("🧠 Initializing lightweight Hugging Face API client...")
+    hf_client = Client(
+        "royalpig7/royalpig-free-bot", 
+        hf_token=HF_TOKEN,
+        verbose=False # 🌟 Stops it from spamming and loading streaming layouts into memory
+    )
+    print("🎉 Gradio API Sync Complete!")
+except Exception as e:
+    print(f"❌ CRITICAL FATAL STARTUP ERROR: {e}")
+    hf_client = None
 
 chat_histories = {}
 
