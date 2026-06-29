@@ -1,8 +1,7 @@
 import discord
 from discord.ext import commands
 import os
-import asyncio
-from gradio_client import Client
+import requests
 from flask import Flask
 from threading import Thread
 
@@ -25,9 +24,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 HF_TOKEN = os.environ.get("HF_TOKEN")
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 
-# Connect using the exact syntax from your working test script
-print("📡 Connecting to Hugging Face Space...")
-hf_client = Client("royalpig7/royalpig-free-bot", token=HF_TOKEN)
+# The direct HTTP API route to your specific space endpoint
+API_URL = "https://royalpig7-royalpig-free-bot.hf.space/api/predict"
+HEADERS = {"Authorization": f"Bearer {HF_TOKEN}"}
 
 chat_histories = {}
 
@@ -56,21 +55,24 @@ async def on_message(message):
                 history_context += f"{prefix}{turn['content']}\n"
 
             try:
-                loop = asyncio.get_event_loop()
-                # 🌟 Removed api_name, matched your working positional routing structure
-                ai_response = await loop.run_in_executor(
-                    None, 
-                    lambda: hf_client.predict(history_context)
-                )
+                # 🌟 Raw HTTP Payload matching Gradio's expected json structure
+                payload = {"data": [history_context]}
                 
-                if ai_response:
+                # Make a clean, standard POST request that won't break on Python 3.14
+                response = requests.post(API_URL, json=payload, headers=HEADERS, timeout=30)
+                
+                if response.status_code == 200:
+                    # Extract the text from Gradio's standard output array format
+                    ai_response = response.json()["data"][0]
+                    
                     chat_histories[channel_id].append({"role": "assistant", "content": ai_response})
                     await message.channel.send(ai_response)
                 else:
-                    await message.channel.send("Thinking... but nothing came out. Hit me again!")
+                    print(f"❌ HF Status Error: {response.status_code} - {response.text}")
+                    await message.channel.send("⚠️ Received an invalid response structure from Hugging Face.")
                     
             except Exception as e:
-                print(f"❌ Gradio Framework Error: {e}")
+                print(f"❌ Network Request Error: {e}")
                 await message.channel.send("⚠️ Lost my connection thread to Hugging Face. Try typing it again!")
 
             if len(chat_histories[channel_id]) > 10:
