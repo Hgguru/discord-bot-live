@@ -54,9 +54,10 @@ async def on_message(message):
 
             try:
                 loop = asyncio.get_event_loop()
+                # 🌟 Explicitly point to the named /predict api endpoint route
                 ai_response = await loop.run_in_executor(
                     None, 
-                    lambda: hf_client.predict(history_context)
+                    lambda: hf_client.predict(param_0=history_context, api_name="/predict")
                 )
                 
                 if ai_response:
