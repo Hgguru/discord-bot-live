@@ -18,7 +18,6 @@ def run_web_server():
     app.run(host='0.0.0.0', port=port)
 
 # 2. Setup Discord Bot Configs
-# Setup Discord Bot Configs
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -26,18 +25,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 HF_TOKEN = os.environ.get("HF_TOKEN")
 DISCORD_TOKEN = os.environ.get("DISCORD_TOKEN")
 
-# 🌟 Wrapped in a memory-safe try block with verbose logs turned off
-try:
-    print("🧠 Initializing lightweight Hugging Face API client...")
-    hf_client = Client(
-        "royalpig7/royalpig-free-bot", 
-        hf_token=HF_TOKEN,
-        verbose=False # 🌟 Stops it from spamming and loading streaming layouts into memory
-    )
-    print("🎉 Gradio API Sync Complete!")
-except Exception as e:
-    print(f"❌ CRITICAL FATAL STARTUP ERROR: {e}")
-    hf_client = None
+# Connect using the exact syntax from your working test script
+print("📡 Connecting to Hugging Face Space...")
+hf_client = Client("royalpig7/royalpig-free-bot", token=HF_TOKEN)
 
 chat_histories = {}
 
@@ -67,10 +57,10 @@ async def on_message(message):
 
             try:
                 loop = asyncio.get_event_loop()
-                # 🌟 Explicitly point to the named /predict api endpoint route
+                # 🌟 Removed api_name, matched your working positional routing structure
                 ai_response = await loop.run_in_executor(
                     None, 
-                    lambda: hf_client.predict(param_0=history_context, api_name="/predict")
+                    lambda: hf_client.predict(history_context)
                 )
                 
                 if ai_response:
@@ -87,11 +77,9 @@ async def on_message(message):
                 chat_histories[channel_id] = chat_histories[channel_id][-10:]
 
 # 3. CONCURRENT LAUNCH TRACK
-# Start the web server in a separate background thread first
 server_thread = Thread(target=run_web_server)
-server_thread.daemon = True  # Allows the thread to exit cleanly when the main script stops
+server_thread.daemon = True
 server_thread.start()
 
-# Now run the Discord connection loop on the main script thread
 print("🚀 Launching Discord client engine...")
 bot.run(DISCORD_TOKEN)
