@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from google.genai import types
 import discord
 from discord import app_commands
+from aiohttp import web
 
 # ---------------------------------------------------------
 # 1. ENVIRONMENT & CSV DATASET SETUP
@@ -327,5 +328,27 @@ async def on_message(message):
 
             # Send safely split across multiple Discord messages if needed
             await send_split_message(message.channel, reply_text)
+
+async def handle_ping(request):
+    return web.Response(text="royalpigAI is online!")
+
+async def start_dummy_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"Health check web server running on port {port}")
+
+# Patch on_ready to start the web server
+original_on_ready = on_ready if 'on_ready' in globals() else None
+
+@discord_client.event
+async def on_ready():
+    if original_on_ready:
+        await original_on_ready()
+    await start_dummy_web_server()
 
 discord_client.run(DISCORD_TOKEN)
