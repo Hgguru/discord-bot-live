@@ -2,3 +2,5 @@ discord.py
 google-genai
 pandas
 python-dotenv
+pydantic
+aiohttp
