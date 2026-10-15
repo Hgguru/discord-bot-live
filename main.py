@@ -13,6 +13,7 @@ from google.genai import types
 import discord
 from discord import app_commands
 from aiohttp import web
+import sys
 
 # ---------------------------------------------------------
 # 1. ENVIRONMENT & CSV DATASET SETUP
@@ -209,16 +210,25 @@ def generate_gemini_response(full_prompt: str, persona: str) -> str:
 # ---------------------------------------------------------
 # 3. DISCORD BOT EVENT HANDLERS
 # ---------------------------------------------------------
+def log(msg):
+    print(msg, flush=True)
+
 class RoyalPigClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self):
-        # Sync slash commands globally when the bot starts
-        print("Syncing slash commands with Discord...")
-        await self.tree.sync()
-        print("Slash commands synced successfully!")
+        # 1. Start web server FIRST so Render health checks pass immediately
+        await start_dummy_web_server()
+        
+        # 2. Sync slash commands asynchronously
+        log("Syncing slash commands globally with Discord...")
+        try:
+            await self.tree.sync()
+            log("Slash commands synced successfully!")
+        except Exception as e:
+            log(f"Error syncing slash commands: {e}")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -246,7 +256,7 @@ async def send_split_message(channel, text: str, max_length: int = 1900):
 
 @discord_client.event
 async def on_ready():
-    print(f"Bot logged in successfully as {discord_client.user}")
+    log(f"Bot logged in successfully as {discord_client.user}")
 
 @discord_client.tree.command(name="ask", description="Ask royalpigAI anything about Marvel Rivals")
 @app_commands.describe(prompt="Your question or topic for royalpigAI")
