@@ -219,16 +219,15 @@ class RoyalPigClient(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self):
-        # 1. Start web server FIRST so Render health checks pass immediately
         await start_dummy_web_server()
         
-        # 2. Sync slash commands asynchronously
-        log("Syncing slash commands globally with Discord...")
+        # Wrap tree.sync in a try-except block so Cloudflare 1015 errors won't crash the bot
         try:
+            print("Syncing slash commands with Discord...")
             await self.tree.sync()
-            log("Slash commands synced successfully!")
+            print("Slash commands synced successfully!")
         except Exception as e:
-            log(f"Error syncing slash commands: {e}")
+            print(f"WARNING: Failed to sync slash commands (Cloudflare/Discord API blocked): {e}")
 
 intents = discord.Intents.default()
 intents.message_content = True
